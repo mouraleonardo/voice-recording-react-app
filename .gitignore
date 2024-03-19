@@ -1,0 +1,36 @@
+# Ignore node modules
+node_modules/
+
+# Ignore generated files
+build/
+dist/
+*.log
+npm-debug.log*
+
+# Ignore package locks
+package-lock.json
+yarn.lock
+
+# Ignore environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore Visual Studio Code specific files
+.vscode/
+*.code-workspace
+
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore Windows specific files
+Thumbs.db
+
+# Ignore React specific files
+.DS_*
+logs/
+**/*.backup.*
+**/*.back.*
+
+# Ignore miscellaneous files
