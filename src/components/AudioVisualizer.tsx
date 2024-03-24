@@ -2,13 +2,13 @@
 import { useEffect, useRef, useCallback } from "react";
 
 interface AudioVisualizerProps {
-  audioUrl: string | null;
+  mediaUrl: string | null;
   isPlaying: boolean;
   analyser?: AnalyserNode | null;
 }
 
 const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
-  audioUrl,
+  mediaUrl,
   isPlaying,
   analyser: externalAnalyser,
 }) => {
@@ -87,14 +87,14 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     if (externalAnalyser) {
       analyserRef.current = externalAnalyser;
       draw();
-    } else if (audioUrl && isPlaying) {
+    } else if (mediaUrl && isPlaying) {
       const setupAudio = async () => {
         if (!audioContextRef.current) {
           audioContextRef.current = new AudioContext();
         }
         await audioContextRef.current.resume(); // Ensure the audio context is resumed
         const analyser = audioContextRef.current.createAnalyser();
-        const mediaElement = new Audio(audioUrl);
+        const mediaElement = new Audio(mediaUrl);
         const sourceNode =
           audioContextRef.current.createMediaElementSource(mediaElement);
 
@@ -124,7 +124,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     }
 
     return cleanup;
-  }, [audioUrl, isPlaying, draw, externalAnalyser]);
+  }, [mediaUrl, isPlaying, draw, externalAnalyser]);
 
   return (
     <canvas
