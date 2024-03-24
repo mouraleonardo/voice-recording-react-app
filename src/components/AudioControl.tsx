@@ -1,19 +1,19 @@
 // src/components/AudioControl.tsx
 import { useState, useEffect, useRef } from 'react';
-import { useAudioRecorder } from './hooks/useAudioRecorder';
+import { useMediaRecorder } from './hooks/useAudioRecorder';
 import AudioVisualizer from './AudioVisualizer';
 import { FiMic, FiSquare, FiPlay, FiPause, FiTrash2 } from 'react-icons/fi';
 import { Card, Modal, ModalHeader, ModalBody, Button } from 'flowbite-react';
 
 const AudioControl: React.FC = () => {
   const {
-    audioUrl,
+    mediaUrl,
     startRecording,
     stopRecording,
     deleteRecording,
     recordingState,
     analyser,
-  } = useAudioRecorder();
+  } = useMediaRecorder();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -23,8 +23,8 @@ const AudioControl: React.FC = () => {
       audioRef.current.pause();
       audioRef.current.src = '';
     }
-    if (audioUrl) {
-      const audioElement = new Audio(audioUrl);
+    if (mediaUrl) {
+      const audioElement = new Audio(mediaUrl);
       audioElement.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current = audioElement;
       return () => {
@@ -33,7 +33,7 @@ const AudioControl: React.FC = () => {
         audioElement.src = '';
       };
     }
-  }, [audioUrl]);
+  }, [mediaUrl]);
 
   const togglePlayback = () => {
     const audio = audioRef.current;
@@ -87,7 +87,7 @@ const AudioControl: React.FC = () => {
               <FiSquare />
             </button>
           )}
-          {audioUrl && (
+          {mediaUrl && (
             <>
               <button
                 id="play-audio"
@@ -108,12 +108,12 @@ const AudioControl: React.FC = () => {
             </>
           )}
           {recordingState === 'recording' && analyser && (
-            <AudioVisualizer analyser={analyser} isPlaying={false} audioUrl={null} />
+            <AudioVisualizer analyser={analyser} isPlaying={false} mediaUrl={null} />
           )}
         </div>
-        {audioUrl && (
+        {mediaUrl && (
           <div className="mt-2 text-center">
-            <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} />
+            <AudioVisualizer mediaUrl={mediaUrl} isPlaying={isPlaying} />
           </div>
         )}
       </Card>

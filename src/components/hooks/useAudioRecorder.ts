@@ -1,10 +1,9 @@
-// src/components/hooks/useAudioRecorder.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 type RecordingState = "idle" | "recording" | "stopped";
 
-interface UseAudioRecorderReturn {
-  audioUrl: string | null;
+interface UseMediaRecorderReturn {
+  mediaUrl: string | null;
   recordingState: RecordingState;
   startRecording: () => void;
   stopRecording: () => void;
@@ -13,92 +12,72 @@ interface UseAudioRecorderReturn {
   analyser: AnalyserNode | null;
 }
 
-export const useAudioRecorder = (): UseAudioRecorderReturn => {
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+export const useMediaRecorder = (): UseMediaRecorderReturn => {
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null
-  );
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   useEffect(() => {
     return () => {
-      // Ensure all tracks are stopped when the component unmounts
-      mediaRecorder?.stream.getTracks().forEach((track) => track.stop());
+      mediaRecorder?.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
     };
   }, [mediaRecorder]);
 
-  const startRecording = async () => {
+  const createMediaBlob = useCallback((chunks: Blob[], stream: MediaStream) => {
+    const mediaBlob = new Blob(chunks, { type: "audio/webm" });
+    const mediaUrl = URL.createObjectURL(mediaBlob);
+    setMediaUrl(mediaUrl);
+    setRecordingState("stopped");
+    stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+  }, []);
+
+  const startRecording = useCallback(async () => {
     if (recordingState !== "idle") return;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!MediaRecorder.isTypeSupported("audio/webm")) {
-        setError("Audio format not supported");
-        return;
-      }
-
-      // Visualization setup
-      // Note: You might need to move or adjust this part based on your application structure.
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
       const audioContext = new AudioContext();
       const mediaStreamSource = audioContext.createMediaStreamSource(stream);
       const analyserNode = audioContext.createAnalyser();
       mediaStreamSource.connect(analyserNode);
-      // Optionally connect the analyserNode to audioContext.destination if you want to hear the audio while recording
       setAnalyser(analyserNode);
-      // Here you would need to ensure that your AudioVisualizer component can accept and use the analyser node for real-time visualization.
-      // For example, you could add a state to store the analyser node and pass it to the AudioVisualizer component.
-
 
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
       let chunks: Blob[] = [];
-
-      recorder.ondataavailable = (e: BlobEvent) => {
-        chunks.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const audioBlob = new Blob(chunks, { type: "audio/webm" });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        setAudioUrl(audioUrl);
-        setRecordingState("stopped");
-
-        // Release the microphone by stopping the stream's tracks
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
+      recorder.ondataavailable = (e: BlobEvent) => chunks.push(e.data);
+      recorder.onstop = () => createMediaBlob(chunks, stream);
       setMediaRecorder(recorder);
       recorder.start();
       setRecordingState("recording");
     } catch (err) {
-      setError(
-        "Failed to start recording. Please ensure you have granted microphone access."
-      );
+      setError("Failed to start recording. Please ensure you have granted access.");
     }
-  };
+  }, [recordingState, createMediaBlob]); // Now createMediaBlob is included as a dependency
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     if (recordingState === "recording" && mediaRecorder) {
-      mediaRecorder.stop(); // This triggers the onstop event where the stream tracks are stopped
+      mediaRecorder.stop();
     }
-  };
+  }, [recordingState, mediaRecorder]);
 
-  const deleteRecording = () => {
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-      setAudioUrl(null);
+  const deleteRecording = useCallback(() => {
+    if (mediaUrl) {
+      URL.revokeObjectURL(mediaUrl);
+      setMediaUrl(null);
       setRecordingState("idle");
     }
-  };
+  }, [mediaUrl]);
 
   return {
-    audioUrl,
+    mediaUrl,
     recordingState,
     startRecording,
     stopRecording,
     deleteRecording,
-    analyser,
     error,
+    analyser,
   };
 };
