@@ -1,9 +1,9 @@
 // src/components/AudioControl.tsx
-import { useState, useEffect, useRef } from "react";
-import { useAudioRecorder } from "./hooks/useAudioRecorder";
-import AudioVisualizer from "./AudioVisualizer";
-import { FiMic, FiSquare, FiPlay, FiPause, FiTrash2 } from "react-icons/fi";
-import { Card, Modal, ModalHeader, ModalBody, Button } from "flowbite-react";
+import { useState, useEffect, useRef } from 'react';
+import { useAudioRecorder } from './hooks/useAudioRecorder';
+import AudioVisualizer from './AudioVisualizer';
+import { FiMic, FiSquare, FiPlay, FiPause, FiTrash2 } from 'react-icons/fi';
+import { Card, Modal, ModalHeader, ModalBody, Button } from 'flowbite-react';
 
 const AudioControl: React.FC = () => {
   const {
@@ -19,20 +19,18 @@ const AudioControl: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // Cleanup previous audio element if exists
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = ""; // Helps ensure the audio stops playing
+      audioRef.current.src = '';
     }
-
     if (audioUrl) {
       const audioElement = new Audio(audioUrl);
-      audioElement.addEventListener("ended", () => setIsPlaying(false));
+      audioElement.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current = audioElement;
       return () => {
         audioElement.pause();
-        audioElement.removeEventListener("ended", () => setIsPlaying(false));
-        audioElement.src = ""; // Ensure cleanup
+        audioElement.removeEventListener('ended', () => setIsPlaying(false));
+        audioElement.src = '';
       };
     }
   }, [audioUrl]);
@@ -41,13 +39,10 @@ const AudioControl: React.FC = () => {
     const audio = audioRef.current;
     if (audio) {
       if (!isPlaying) {
-        audio
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch((error) => {
-            console.error("Error playing audio:", error);
-            setIsPlaying(false);
-          });
+        audio.play().then(() => setIsPlaying(true)).catch((error) => {
+          console.error('Error playing audio:', error);
+          setIsPlaying(false);
+        });
       } else {
         audio.pause();
         setIsPlaying(false);
@@ -57,56 +52,48 @@ const AudioControl: React.FC = () => {
 
   const handleDeleteConfirm = () => {
     deleteRecording();
-    setIsPlaying(false); // Reset playback state
+    setIsPlaying(false);
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = ""; // Cleanup the audio element
+      audioRef.current.src = '';
     }
-    setShowModal(false); // Close the modal
+    setShowModal(false);
   };
 
   return (
-    <>
-      <Card className="max-w-sm shadow-lg">
-        <h2 className="text-2xl font-bold text-center tracking-tight text-gray-900 dark:text-white">
+    <div className="p-2.5">
+      <Card role="region" aria-labelledby="audioControlHeading" className="max-w-full md:max-w-xl lg:max-w-2xl xl:max-w-4xl mx-auto shadow-lg" >
+        <h2 id="audioControlHeading" className="text-xl md:text-2xl lg:text-3xl font-bold text-center tracking-tight text-gray-900 dark:text-white">
           Press the microphone to begin recording
         </h2>
-        <div className="items-center justify-center space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
-          {recordingState === "idle" && (
+        <div className="flex items-center justify-center space-x-4 mt-4">
+          {recordingState === 'idle' && (
             <button
               id="start-recording"
-              className="p-3 bg-blue-500 text-white rounded-full "
+              className="p-3 bg-blue-500 text-white rounded-full"
               onClick={startRecording}
+              aria-label="Start recording"
             >
               <FiMic />
             </button>
           )}
-          {recordingState === "recording" && (
+          {recordingState === 'recording' && (
             <button
               id="stop-recording"
               className="p-3 bg-red-500 text-white rounded-full"
               onClick={stopRecording}
+              aria-label="Stop recording"
             >
               <FiSquare />
             </button>
           )}
-          {recordingState === "recording" && analyser && (
-            <AudioVisualizer
-              analyser={analyser}
-              isPlaying={false}
-              audioUrl={null}
-            />
-          )}
-        </div>
-        <div className="items-center justify-center space-y-4 sm:flex sm:space-x-4 sm:space-y-0 gap-2">
           {audioUrl && (
             <>
               <button
                 id="play-audio"
-                className={`p-3 ${
-                  isPlaying ? "bg-red-500" : "bg-blue-500"
-                } text-white rounded-full`}
+                className={`p-3 ${isPlaying ? 'bg-red-500' : 'bg-blue-500'} text-white rounded-full`}
                 onClick={togglePlayback}
+                aria-label={isPlaying ? 'Pause playback' : 'Play recording'}
               >
                 {isPlaying ? <FiPause /> : <FiPlay />}
               </button>
@@ -114,23 +101,24 @@ const AudioControl: React.FC = () => {
                 id="delete-audio"
                 className="p-3 bg-gray-500 text-white rounded-full"
                 onClick={() => setShowModal(true)}
+                aria-label="Delete recording"
               >
                 <FiTrash2 />
               </button>
-              <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} />
             </>
           )}
-        </div>
-        <div className="mt-2 text-center">
-          {recordingState === "recording" && <p>Recording...</p>}
-          {recordingState === "stopped" && audioUrl && !isPlaying && (
-            <p>Playback available</p>
+          {recordingState === 'recording' && analyser && (
+            <AudioVisualizer analyser={analyser} isPlaying={false} audioUrl={null} />
           )}
-          {isPlaying && <p>Playing...</p>}
         </div>
+        {audioUrl && (
+          <div className="mt-2 text-center">
+            <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} />
+          </div>
+        )}
       </Card>
-      <Modal show={showModal} onClose={() => setShowModal(false)}>
-        <ModalHeader>Delete Recording</ModalHeader>
+      <Modal role="dialoge" show={showModal} onClose={() => setShowModal(false)} aria-labelledby="deleteConfirmation">
+        <ModalHeader id="deleteConfirmation">Delete Recording</ModalHeader>
         <ModalBody>
           <div className="text-center">
             <p>Are you sure you want to delete this recording?</p>
@@ -145,7 +133,7 @@ const AudioControl: React.FC = () => {
           </div>
         </ModalBody>
       </Modal>
-    </>
+    </div>
   );
 };
 
